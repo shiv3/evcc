@@ -62,11 +62,11 @@ var (
 // interceptingServer routes connect/disconnect/message events through the
 // forwarder hooks. The message hook returns true to bypass evcc's OCPP handler.
 type interceptingServer struct {
-	ws.Server
+	ws.WsServer
 }
 
-func (s *interceptingServer) SetMessageHandler(handler ws.MessageHandler) {
-	s.Server.SetMessageHandler(func(ch ws.Channel, data []byte) error {
+func (s *interceptingServer) SetMessageHandler(handler func(ws.Channel, []byte) error) {
+	s.WsServer.SetMessageHandler(func(ch ws.Channel, data []byte) error {
 		if chargerMessageHook != nil && chargerMessageHook(ch, data) {
 			return nil
 		}
@@ -74,8 +74,8 @@ func (s *interceptingServer) SetMessageHandler(handler ws.MessageHandler) {
 	})
 }
 
-func (s *interceptingServer) SetNewClientHandler(handler ws.ConnectedHandler) {
-	s.Server.SetNewClientHandler(func(ch ws.Channel) {
+func (s *interceptingServer) SetNewClientHandler(handler func(ws.Channel)) {
+	s.WsServer.SetNewClientHandler(func(ch ws.Channel) {
 		if chargerConnectHook != nil {
 			chargerConnectHook(ch)
 		}
@@ -84,7 +84,7 @@ func (s *interceptingServer) SetNewClientHandler(handler ws.ConnectedHandler) {
 }
 
 func (s *interceptingServer) SetDisconnectedClientHandler(handler func(ws.Channel)) {
-	s.Server.SetDisconnectedClientHandler(func(ch ws.Channel) {
+	s.WsServer.SetDisconnectedClientHandler(func(ch ws.Channel) {
 		if chargerDisconnectHook != nil {
 			chargerDisconnectHook(ch)
 		}
@@ -137,7 +137,7 @@ func NewServer(cfg Config, networkExternalUrl string) {
 
 	log := util.NewLogger("ocpp")
 
-	server := &interceptingServer{Server: ws.NewServer()}
+	server := &interceptingServer{WsServer: ws.NewServer()}
 	server.SetCheckOriginHandler(func(r *http.Request) bool { return true })
 
 	timeouts := ws.NewServerTimeoutConfig()

@@ -31,7 +31,7 @@ type CS struct {
 	regs        map[string]*registration // guarded by mu mutex
 	txnId       atomic.Int64
 	publishFunc func()
-	server      ws.Server              // raw server, used by the forwarder to write frames
+	server      ws.WsServer            // raw server, used by the forwarder to write frames
 	dispatcher  ocppj.ServerDispatcher // request dispatcher, timeout set at start
 }
 
